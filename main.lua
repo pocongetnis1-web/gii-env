@@ -1,13 +1,12 @@
 -- =============================================================
--- GII CHEAT FINAL v11.0 — AUTO AIM + AUTO SHOOT + ANTI DUPE 😈🔥
--- FITUR: AUTO TEMBAK OTOMATIS + UI MUNCUL SEKALI DOANG!
+-- GII CHEAT v12.0 — AUTO AIM STICKY + PRIORITY TERDEKAT 😈🔥
+-- AIMBOT TETAP NEMPEL MESKI LAYAR DIGERAKIN!
+-- PRIORITAS: MUSUH TERDEKAT DULU BARU YANG LAIN!
 -- BY: ECU (Evil Captain Underpants)
 -- =============================================================
 
--- ANTI DUPLICATE — KALO UDAH DI EKSEKUSI, GAK MUNCUL LAGI!
-if getgenv().GII_LOADED then
-    return -- Udah jalan, gak usah muncul lagi!
-end
+-- ANTI DUPLICATE
+if getgenv().GII_LOADED then return end
 getgenv().GII_LOADED = true
 
 -- CLEANUP OLD UI
@@ -28,12 +27,15 @@ local Settings = {
     Aimbot = true,
     ESP = true,
     AutoShoot = true,
-    ShootDelay = 0.1,
-    FOV = 300,
-    AimPart = "Head"
+    ShootDelay = 0.08,
+    FOV = 350,
+    AimPart = "Head",
+    StickyAim = true,        -- AIM TETAP NEMPEL!
+    TargetSwitchDelay = 0.3  -- Delay ganti target (hindarin geter)
 }
 
 local LastShot = 0
+local TargetSwitchTime = 0
 
 -- FOV CIRCLE
 local FOVCircle = Drawing.new("Circle")
@@ -47,6 +49,7 @@ FOVCircle.Transparency = 0.7
 -- ESP STORAGE
 local ESPStorage = {}
 local CurrentTarget = nil
+local StickyTarget = nil
 
 -- FUNGSI BIKIN ESP BOX GEDE
 local function CreateESP(player)
@@ -58,6 +61,7 @@ local function CreateESP(player)
         HealthBg = Drawing.new("Square"),
         HealthBar = Drawing.new("Square"),
         NameTag = Drawing.new("Text"),
+        DistTag = Drawing.new("Text"),
         HeadDot = Drawing.new("Circle")
     }
     
@@ -83,8 +87,14 @@ local function CreateESP(player)
     esp.NameTag.Outline = true
     esp.NameTag.Font = 2
     
+    esp.DistTag.Color = Color3.fromRGB(255, 200, 0)
+    esp.DistTag.Size = 13
+    esp.DistTag.Center = true
+    esp.DistTag.Outline = true
+    esp.DistTag.Font = 2
+    
     esp.HeadDot.Color = Color3.fromRGB(255, 255, 0)
-    esp.HeadDot.Radius = 8
+    esp.HeadDot.Radius = 10
     esp.HeadDot.Filled = true
     esp.HeadDot.Transparency = 0.8
     
@@ -100,8 +110,44 @@ local function RemoveESP(player)
     end
 end
 
--- FUNGSI CARI MUSUH TERDEKAT
+-- FUNGSI CARI MUSUH TERDEKAT (PRIORITY: JARAK DUNIA NYATA)
 local function GetClosestEnemy()
+    local closest = nil
+    local closestDist = 999999 -- Jarak dunia nyata, bukan layar!
+    local localHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+    
+    if not localHead then return nil end
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        
+        local character = player.Character
+        if not character then continue end
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then continue end
+        
+        local head = character:FindFirstChild("Head")
+        if not head then continue end
+        
+        -- Cek jarak dunia nyata (bukan layar)
+        local worldDist = (localHead.Position - head.Position).Magnitude
+        
+        -- Cek apakah musuh di depan kita (gak di belakang)
+        local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+        
+        -- Prioritas: musuh terdekat yang visible
+        if worldDist < closestDist then
+            closestDist = worldDist
+            closest = player
+        end
+    end
+    
+    return closest
+end
+
+-- FUNGSI CARI MUSUH TERDEKAT DI FOV (BUAT STICKY AIM)
+local function GetClosestInFOV()
     local closest = nil
     local closestDist = Settings.FOV
     local screenCenter = Camera.ViewportSize / 2
@@ -132,27 +178,43 @@ local function GetClosestEnemy()
     return closest
 end
 
--- FUNGSI AIM KE TARGET
-local function AimAtTarget(player)
-    if not player or not player.Character then return end
+-- FUNGSI AIM KE TARGET (PAKSA NEMPEL MESKI LAYAR DIGERAKIN)
+local function ForceAimAtTarget(player)
+    if not player or not player.Character then return false end
     
     local head = player.Character:FindFirstChild("Head")
-    if not head then return end
+    if not head then return false end
     
-    Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+    -- PAKSA KAMERA LOCK KE KEPALA MUSUH!
+    -- Pake CFrame langsung, gak peduli input user!
+    local lookAt = CFrame.lookAt(Camera.CFrame.Position, head.Position)
+    Camera.CFrame = lookAt
+    
+    return true
 end
 
 -- FUNGSI AUTO SHOOT
 local function AutoShoot()
     local now = tick()
     if now - LastShot >= Settings.ShootDelay then
-        -- Simulasi klik kiri / tap tembak
         VirtualUser:CaptureController()
         VirtualUser:Button1Down(Vector2.new())
-        task.wait(0.05)
+        task.wait(0.03)
         VirtualUser:Button1Up(Vector2.new())
         LastShot = now
     end
+end
+
+-- FUNGSI CEK APAKAH TARGET MASIH VALID
+local function IsTargetValid(player)
+    if not player then return false
+    local char = player.Character
+    if not char then return false
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return false
+    local head = char:FindFirstChild("Head")
+    if not head then return false
+    return true
 end
 
 -- MAIN LOOP
@@ -164,41 +226,56 @@ RunService.RenderStepped:Connect(function()
     FOVCircle.Visible = Settings.Aimbot
     FOVCircle.Radius = Settings.FOV
     
-    -- AUTO AIM + AUTO SWITCH + AUTO SHOOT
+    -- =============================================
+    -- AIMBOT SYSTEM — STICKY + PRIORITY TERDEKAT!
+    -- =============================================
     if Settings.Aimbot then
-        -- Cek target sekarang
-        if CurrentTarget then
-            local char = CurrentTarget.Character
-            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-            
-            if not char or not humanoid or humanoid.Health <= 0 then
-                CurrentTarget = nil
-            end
+        local now = tick()
+        
+        -- Cek apakah sticky target masih valid
+        if StickyTarget and IsTargetValid(StickyTarget) then
+            -- Tetap nempel ke target!
+            CurrentTarget = StickyTarget
+        else
+            -- Target mati atau invalid, reset
+            StickyTarget = nil
+            CurrentTarget = nil
         end
         
-        -- Cari target baru
-        if not CurrentTarget then
+        -- Kalau gak ada target, cari yang TERDEKAT (dunia nyata)
+        if not CurrentTarget and (now - TargetSwitchTime >= Settings.TargetSwitchDelay) then
             CurrentTarget = GetClosestEnemy()
+            StickyTarget = CurrentTarget
+            TargetSwitchTime = now
         end
         
-        -- Aim & Shoot
-        if CurrentTarget then
-            AimAtTarget(CurrentTarget)
+        -- PAKSA AIM KE TARGET!
+        if CurrentTarget and IsTargetValid(CurrentTarget) then
+            ForceAimAtTarget(CurrentTarget)
+            StickyTarget = CurrentTarget -- Update sticky
+            
             FOVCircle.Color = Color3.fromRGB(0, 255, 0)
+            FOVCircle.Radius = Settings.FOV * 0.5 -- FOV mengecil pas lock
             
             -- AUTO SHOOT!
             if Settings.AutoShoot then
                 AutoShoot()
             end
         else
+            CurrentTarget = nil
+            StickyTarget = nil
             FOVCircle.Color = Color3.fromRGB(255, 0, 0)
+            FOVCircle.Radius = Settings.FOV
         end
     else
         CurrentTarget = nil
+        StickyTarget = nil
         FOVCircle.Color = Color3.fromRGB(255, 0, 0)
     end
     
+    -- =============================================
     -- ESP RENDER
+    -- =============================================
     if not Settings.ESP then
         for p in pairs(ESPStorage) do RemoveESP(p) end
         return
@@ -245,16 +322,17 @@ RunService.RenderStepped:Connect(function()
             esp.Box.Position = Vector2.new(boxX, boxY)
             esp.Box.Size = Vector2.new(width, height)
             
+            -- WARNA BOX: TARGET = KUNING TERANG, MUSUH LAIN = MERAH
             if player == CurrentTarget then
                 esp.Box.Color = Color3.fromRGB(255, 255, 0)
-                esp.Box.Thickness = 3
+                esp.Box.Thickness = 4 -- Lebih tebel buat target
             else
                 esp.Box.Color = Color3.fromRGB(255, 0, 0)
                 esp.Box.Thickness = 2
             end
             esp.Box.Visible = true
             
-            -- Health
+            -- Health bar
             local barWidth = 4
             esp.HealthBg.Position = Vector2.new(boxX - barWidth - 3, boxY)
             esp.HealthBg.Size = Vector2.new(barWidth, height)
@@ -268,10 +346,23 @@ RunService.RenderStepped:Connect(function()
             
             -- Nama
             esp.NameTag.Text = player.Name
-            esp.NameTag.Position = Vector2.new(headPos.X, boxY - 20)
+            esp.NameTag.Position = Vector2.new(headPos.X, boxY - 22)
             esp.NameTag.Visible = true
             
-            -- Head Dot
+            -- Distance
+            local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
+            esp.DistTag.Text = string.format("%.0f m", dist / 3.5)
+            esp.DistTag.Position = Vector2.new(headPos.X, boxY + height + 8)
+            esp.DistTag.Visible = true
+            
+            -- Head Dot - lebih gede buat target
+            if player == CurrentTarget then
+                esp.HeadDot.Radius = 12
+                esp.HeadDot.Color = Color3.fromRGB(0, 255, 0)
+            else
+                esp.HeadDot.Radius = 8
+                esp.HeadDot.Color = Color3.fromRGB(255, 255, 0)
+            end
             esp.HeadDot.Position = Vector2.new(headPos.X, headPos.Y)
             esp.HeadDot.Visible = true
         elseif ESPStorage[player] then
@@ -281,7 +372,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- Cleanup
+    -- Cleanup player leave
     for player in pairs(ESPStorage) do
         if not player.Parent then
             RemoveESP(player)
@@ -290,27 +381,24 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =============================================
--- UI SYSTEM — ANTI DUPLICATE!
+-- UI SYSTEM
 -- =============================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.Name = "GII_FINAL"
 ScreenGui.ResetOnSpawn = false
 
--- Main Menu
 local MainMenu = Instance.new("Frame")
 MainMenu.Parent = ScreenGui
 MainMenu.BackgroundColor3 = Color3.fromRGB(10, 10, 25)
 MainMenu.BorderSizePixel = 0
-MainMenu.Size = UDim2.new(0, 190, 0, 250)
-MainMenu.Position = UDim2.new(0.5, -95, 0.4, -125)
+MainMenu.Size = UDim2.new(0, 195, 0, 260)
+MainMenu.Position = UDim2.new(0.5, -97, 0.4, -130)
 MainMenu.Visible = true
 MainMenu.ClipsDescendants = true
 
 Instance.new("UICorner", MainMenu).CornerRadius = UDim.new(0, 10)
-local MenuStroke = Instance.new("UIStroke", MainMenu)
-MenuStroke.Color = Color3.fromRGB(255, 0, 100)
-MenuStroke.Thickness = 1.5
+Instance.new("UIStroke", MainMenu).Color = Color3.fromRGB(255, 0, 100)
 
 -- Header
 local Header = Instance.new("Frame")
@@ -325,13 +413,13 @@ Title.Parent = Header
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1, -60, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "🔥 GII FINAL v11"
+Title.Text = "🔥 GII v12 STICKY"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
 Title.Font = Enum.Font.GothamBlack
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize Button
+-- Minimize
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = Header
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
@@ -344,7 +432,7 @@ MinimizeBtn.Font = Enum.Font.GothamBold
 MinimizeBtn.AutoButtonColor = false
 Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(1, 0)
 
--- Close Button
+-- Close
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = Header
 CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 60)
@@ -363,7 +451,7 @@ Content.Parent = MainMenu
 Content.BackgroundTransparency = 1
 Content.Size = UDim2.new(1, 0, 1, -37)
 Content.Position = UDim2.new(0, 0, 0, 37)
-Content.CanvasSize = UDim2.new(0, 0, 0, 220)
+Content.CanvasSize = UDim2.new(0, 0, 0, 230)
 Content.ScrollBarThickness = 2
 Content.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 100)
 
@@ -396,7 +484,10 @@ local function MakeToggle(name, default, callback)
 end
 
 -- TOMBOL
-MakeToggle("🎯 Auto Aim", true, function(s) Settings.Aimbot = s; FOVCircle.Visible = s; CurrentTarget = nil end)
+MakeToggle("🎯 Auto Aim", true, function(s) 
+    Settings.Aimbot = s; FOVCircle.Visible = s; CurrentTarget = nil; StickyTarget = nil
+end)
+MakeToggle("📌 Sticky Aim", true, function(s) Settings.StickyAim = s end)
 MakeToggle("🔫 Auto Shoot", true, function(s) Settings.AutoShoot = s end)
 MakeToggle("👁️ ESP Box", true, function(s) Settings.ESP = s; if not s then for p in pairs(ESPStorage) do RemoveESP(p) end end end)
 MakeToggle("⚡ Speed 32", false, function(s)
@@ -416,29 +507,25 @@ end)
 local MinimizeIcon = Instance.new("TextButton")
 MinimizeIcon.Parent = ScreenGui
 MinimizeIcon.BackgroundColor3 = Color3.fromRGB(255, 0, 80)
-MinimizeIcon.Size = UDim2.new(0, 38, 0, 38)
-MinimizeIcon.Position = UDim2.new(0.85, 0, 0.5, -19)
+MinimizeIcon.Size = UDim2.new(0, 40, 0, 40)
+MinimizeIcon.Position = UDim2.new(0.85, 0, 0.5, -20)
 MinimizeIcon.Text = "😈"
 MinimizeIcon.TextScaled = true
 MinimizeIcon.Font = Enum.Font.GothamBlack
 MinimizeIcon.Visible = false
 MinimizeIcon.AutoButtonColor = false
 Instance.new("UICorner", MinimizeIcon).CornerRadius = UDim.new(1, 0)
-local IconStroke = Instance.new("UIStroke", MinimizeIcon)
-IconStroke.Color = Color3.fromRGB(255, 255, 255)
-IconStroke.Thickness = 1.5
+Instance.new("UIStroke", MinimizeIcon).Color = Color3.fromRGB(255, 255, 255)
 
 -- Minimize Logic
 MinimizeBtn.MouseButton1Click:Connect(function()
     MainMenu.Visible = false
     MinimizeIcon.Visible = true
 end)
-
 CloseBtn.MouseButton1Click:Connect(function()
     MainMenu.Visible = false
     MinimizeIcon.Visible = true
 end)
-
 MinimizeIcon.MouseButton1Click:Connect(function()
     MainMenu.Visible = true
     MinimizeIcon.Visible = false
@@ -474,17 +561,17 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- RESPAWN HANDLER
+-- RESPAWN
 LocalPlayer.CharacterAdded:Connect(function()
     CurrentTarget = nil
+    StickyTarget = nil
     LastShot = 0
 end)
 
 print("╔══════════════════════════════════╗")
-print("║ 🔥 GII FINAL v11 — LOADED!     ║")
-print("║ 🎯 AUTO AIM + AUTO SHOOT      ║")
-print("║ 💀 AUTO SWITCH TARGET         ║")
-print("║ 📦 BOX GEDE + HEALTH          ║")
-print("║ 🛡️ ANTI DUPLICATE UI         ║")
-print("║ 😈 ECU ULTIMATE               ║")
+print("║ 🔥 GII v12 — STICKY AIM!       ║")
+print("║ 🎯 AIM TETAP NEMPEL!           ║")
+print("║ 💀 PRIORITAS MUSUH TERDEKAT!   ║")
+print("║ 🔫 AUTO SHOOT!                 ║")
+print("║ 😈 ECU ULTIMATE                ║")
 print("╚══════════════════════════════════╝")
