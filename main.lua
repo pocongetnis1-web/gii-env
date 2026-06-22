@@ -1,7 +1,7 @@
 -- =============================================================
--- 🔥 GII CHEAT v14.0 — DARK UI ULTIMATE EDITION 🔥
--- AUTO AIM STICKY + AUTO SHOOT + ESP + DARK THEME BUTTONS
--- BY: ECU (Evil Captain Underpants) — UI KEREN ABIS!
+-- 🔥 GII CHEAT v15.0 — DOUBLE TAP SWITCH TARGET 🔥
+-- AUTO AIM STICKY + AUTO SHOOT + ESP + DOUBLE TAP SWITCH
+-- BY: ECU (Evil Captain Underpants) — TAP 2X GANTI TARGET!
 -- =============================================================
 
 -- ANTI DUPLICATE HARDCORE
@@ -15,7 +15,7 @@ if getgenv().GII_LOADED then
 end
 getgenv().GII_LOADED = true
 
--- CLEANUP OLD UI — PASTI RESET TOTAL
+-- CLEANUP OLD UI
 pcall(function()
     local old = game:GetService("CoreGui"):FindFirstChild("GII_FINAL")
     if old then old:Destroy() end
@@ -43,13 +43,17 @@ local Settings = {
     TargetSwitchDelay = 0.2,
     ShowFOV = true,
     ShowHealth = true,
-    ShowDistance = true
+    ShowDistance = true,
+    DoubleTapSwitch = true
 }
 
 local LastShot = 0
 local CurrentTarget = nil
 local StickyTarget = nil
 local TargetSwitchTime = 0
+local LastTapTime = 0
+local TapCount = 0
+local TapTimer = nil
 
 -- FOV CIRCLE
 local FOVCircle = Drawing.new("Circle")
@@ -63,7 +67,152 @@ FOVCircle.Transparency = 0.7
 -- ESP STORAGE
 local ESPStorage = {}
 
--- FUNGSI BIKIN ESP
+-- =============================================
+-- DOUBLE TAP DETECTOR
+-- =============================================
+local function HandleTap()
+    if not Settings.DoubleTapSwitch then return end
+    if not Settings.Aimbot then return end
+    
+    local now = tick()
+    
+    if now - LastTapTime <= 0.4 then
+        -- DOUBLE TAP TERDETEKSI!
+        TapCount = TapCount + 1
+        if TapCount >= 2 then
+            TapCount = 0
+            if TapTimer then
+                TapTimer:Disconnect()
+                TapTimer = nil
+            end
+            -- SWITCH TARGET!
+            SwitchTarget()
+        end
+    else
+        TapCount = 1
+    end
+    
+    LastTapTime = now
+    
+    -- RESET TAP COUNTER KALO KEGET
+    if TapTimer then TapTimer:Disconnect() end
+    TapTimer = game:GetService("RunService").Stepped:Connect(function()
+        if tick() - LastTapTime > 0.5 then
+            TapCount = 0
+            if TapTimer then
+                TapTimer:Disconnect()
+                TapTimer = nil
+            end
+        end
+    end)
+end
+
+-- =============================================
+-- FUNGSI SWITCH TARGET
+-- =============================================
+local function SwitchTarget()
+    local enemies = {}
+    local localHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+    if not localHead then return end
+    
+    -- KUMPULIN SEMUA MUSUH
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        local char = player.Character
+        if not char then continue end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then continue end
+        local head = char:FindFirstChild("Head")
+        if not head then continue end
+        table.insert(enemies, player)
+    end
+    
+    if #enemies == 0 then
+        CurrentTarget = nil
+        StickyTarget = nil
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "⚠️ GAK ADA MUSUH",
+            Text = "Cari musuh dulu baru tap 2x!",
+            Duration = 1
+        })
+        return
+    end
+    
+    -- CARI TARGET SELANJUTNYA (NEXT TARGET)
+    local nextTarget = nil
+    local foundCurrent = false
+    
+    -- URUTKAN BERDASARKAN JARAK
+    table.sort(enemies, function(a, b)
+        local aChar = a.Character
+        local bChar = b.Character
+        if not aChar or not bChar then return false end
+        local aHead = aChar:FindFirstChild("Head")
+        local bHead = bChar:FindFirstChild("Head")
+        if not aHead or not bHead then return false end
+        local aDist = (localHead.Position - aHead.Position).Magnitude
+        local bDist = (localHead.Position - bHead.Position).Magnitude
+        return aDist < bDist
+    end)
+    
+    -- CARI INDEX TARGET CURRENT
+    for i, player in ipairs(enemies) do
+        if player == CurrentTarget then
+            foundCurrent = true
+            -- AMBIL TARGET BERIKUTNYA
+            if i < #enemies then
+                nextTarget = enemies[i + 1]
+            else
+                nextTarget = enemies[1] -- BACK TO FIRST
+            end
+            break
+        end
+    end
+    
+    -- KALO CURRENT TARGET GAK DITEMUKAN, AMBIL YANG PALING DEKAT
+    if not foundCurrent then
+        nextTarget = enemies[1]
+    end
+    
+    -- SET TARGET BARU
+    if nextTarget then
+        CurrentTarget = nextTarget
+        StickyTarget = nextTarget
+        TargetSwitchTime = tick()
+        
+        -- NOTIFIKASI
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "🎯 TARGET SWITCHED!",
+            Text = "Lock ke: " .. nextTarget.Name,
+            Duration = 1
+        })
+        
+        -- EFEK VISUAL — FLASH FOV
+        FOVCircle.Color = Color3.fromRGB(0, 255, 255)
+        FOVCircle.Radius = Settings.FOV * 0.3
+        task.delay(0.3, function()
+            FOVCircle.Color = Color3.fromRGB(0, 255, 0)
+            FOVCircle.Radius = Settings.FOV * 0.5
+        end)
+    end
+end
+
+-- =============================================
+-- DETECT TAP ON SCREEN
+-- =============================================
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    -- TAP / KLIK KIRI
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+       input.UserInputType == Enum.UserInputType.Touch then
+        HandleTap()
+    end
+end)
+
+-- =============================================
+-- FUNGSI ESP (SAMA KAYAK SEBELUMNYA)
+-- =============================================
 local function CreateESP(player)
     if ESPStorage[player] then return end
     local esp = {}
@@ -120,7 +269,7 @@ local function RemoveESP(player)
     end
 end
 
--- FUNGSI CARI MUSUH TERDEKAT (PRIORITAS JARAK DUNIA)
+-- FUNGSI CARI MUSUH TERDEKAT
 local function GetClosestEnemy()
     local closest = nil
     local closestDist = 999999
@@ -145,7 +294,6 @@ local function GetClosestEnemy()
     return closest
 end
 
--- FUNGSI CEK TARGET VALID
 local function IsTargetValid(player)
     if not player then return false end
     local char = player.Character
@@ -157,7 +305,6 @@ local function IsTargetValid(player)
     return true
 end
 
--- FUNGSI AIM PAKSA
 local function ForceAimAtTarget(player)
     if not player or not player.Character then return false end
     local head = player.Character:FindFirstChild("Head")
@@ -166,7 +313,6 @@ local function ForceAimAtTarget(player)
     return true
 end
 
--- FUNGSI AUTO SHOOT
 local function AutoShoot()
     local now = tick()
     if now - LastShot >= Settings.ShootDelay then
@@ -182,16 +328,13 @@ end
 RunService.RenderStepped:Connect(function()
     local screenCenter = Camera.ViewportSize / 2
     
-    -- FOV
     FOVCircle.Position = Vector2.new(screenCenter.X, screenCenter.Y)
     FOVCircle.Visible = Settings.Aimbot
     FOVCircle.Radius = Settings.FOV
     
-    -- AIMBOT
     if Settings.Aimbot then
         local now = tick()
         
-        -- Cek sticky target
         if StickyTarget and IsTargetValid(StickyTarget) then
             CurrentTarget = StickyTarget
         else
@@ -199,14 +342,12 @@ RunService.RenderStepped:Connect(function()
             CurrentTarget = nil
         end
         
-        -- Cari target baru
         if not CurrentTarget and (now - TargetSwitchTime >= Settings.TargetSwitchDelay) then
             CurrentTarget = GetClosestEnemy()
             StickyTarget = CurrentTarget
             TargetSwitchTime = now
         end
         
-        -- Aim ke target
         if CurrentTarget and IsTargetValid(CurrentTarget) then
             ForceAimAtTarget(CurrentTarget)
             StickyTarget = CurrentTarget
@@ -262,12 +403,10 @@ RunService.RenderStepped:Connect(function()
             local boxY = headPos.Y - height * 0.2
             local hpPct = humanoid.Health / humanoid.MaxHealth
             
-            -- Box Outline
             esp.BoxOutline.Position = Vector2.new(boxX - 1, boxY - 1)
             esp.BoxOutline.Size = Vector2.new(width + 2, height + 2)
             esp.BoxOutline.Visible = true
             
-            -- Box
             esp.Box.Position = Vector2.new(boxX, boxY)
             esp.Box.Size = Vector2.new(width, height)
             esp.Box.Visible = true
@@ -284,7 +423,6 @@ RunService.RenderStepped:Connect(function()
                 esp.HeadDot.Radius = 8
             end
             
-            -- Health
             local barW = 4
             esp.HealthBg.Position = Vector2.new(boxX - barW - 3, boxY)
             esp.HealthBg.Size = Vector2.new(barW, height)
@@ -296,18 +434,15 @@ RunService.RenderStepped:Connect(function()
             esp.HealthBar.Color = Color3.fromHSV(hpPct * 0.33, 1, 1)
             esp.HealthBar.Visible = true
             
-            -- Name
             esp.NameTag.Text = player.Name
             esp.NameTag.Position = Vector2.new(headPos.X, boxY - 22)
             esp.NameTag.Visible = true
             
-            -- Distance
             local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
             esp.DistTag.Text = string.format("%.0f m", dist / 3.5)
             esp.DistTag.Position = Vector2.new(headPos.X, boxY + height + 8)
             esp.DistTag.Visible = true
             
-            -- Head Dot
             esp.HeadDot.Position = Vector2.new(headPos.X, headPos.Y)
             esp.HeadDot.Visible = true
         else
@@ -323,15 +458,13 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- Cleanup
     for player in pairs(ESPStorage) do
         if not player.Parent then RemoveESP(player) end
     end
 end)
 
 -- =============================================
--- UI SYSTEM — DARK UI ULTIMATE EDITION
--- PAKE SEMUA EFEK DARI KOLEKSI BUTTON
+-- UI SYSTEM — DARK UI ULTIMATE EDITION + TOGGLE DOUBLE TAP
 -- =============================================
 task.wait(0.5)
 
@@ -346,26 +479,24 @@ local MainMenu = Instance.new("Frame")
 MainMenu.Parent = ScreenGui
 MainMenu.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 MainMenu.BorderSizePixel = 0
-MainMenu.Size = UDim2.new(0, 220, 0, 340)
-MainMenu.Position = UDim2.new(0.5, -110, 0.35, -170)
+MainMenu.Size = UDim2.new(0, 220, 0, 370)
+MainMenu.Position = UDim2.new(0.5, -110, 0.35, -185)
 MainMenu.Visible = true
 MainMenu.ClipsDescendants = true
 MainMenu.Active = true
 MainMenu.Draggable = false
 
--- CORNER
 local MenuCorner = Instance.new("UICorner")
 MenuCorner.CornerRadius = UDim.new(0, 12)
 MenuCorner.Parent = MainMenu
 
--- STROKE — NEON OUTLINE
 local MenuStroke = Instance.new("UIStroke")
 MenuStroke.Color = Color3.fromRGB(57, 255, 136)
 MenuStroke.Thickness = 1.5
 MenuStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MenuStroke.Parent = MainMenu
 
--- HEADER — DARK GLOW
+-- HEADER
 local Header = Instance.new("Frame")
 Header.Parent = MainMenu
 Header.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -383,13 +514,13 @@ Title.Parent = Header
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1, -70, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Text = "🔥 GII v14 DARK"
+Title.Text = "🔥 GII v15 TAP"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
 Title.Font = Enum.Font.GothamBlack
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- BUTTON MINIMIZE — RIPPLE EFFECT + NEON
+-- MINIMIZE BUTTON
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = Header
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -407,7 +538,7 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(1, 0)
 MinCorner.Parent = MinimizeBtn
 
--- BUTTON CLOSE — RIPPLE EFFECT + RED NEON
+-- CLOSE BUTTON
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = Header
 CloseBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -425,13 +556,13 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(1, 0)
 CloseCorner.Parent = CloseBtn
 
--- SCROLLING CONTENT
+-- CONTENT
 local Content = Instance.new("ScrollingFrame")
 Content.Parent = MainMenu
 Content.BackgroundTransparency = 1
 Content.Size = UDim2.new(1, -8, 1, -48)
 Content.Position = UDim2.new(0, 4, 0, 46)
-Content.CanvasSize = UDim2.new(0, 0, 0, 280)
+Content.CanvasSize = UDim2.new(0, 0, 0, 310)
 Content.ScrollBarThickness = 3
 Content.ScrollBarImageColor3 = Color3.fromRGB(57, 255, 136)
 Content.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -443,9 +574,7 @@ ListLayout.Parent = Content
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ListLayout.Padding = UDim.new(0, 6)
 
--- =============================================
--- FUNGSI BIKIN BUTTON DARK THEME
--- =============================================
+-- FUNGSI BIKIN TOGGLE DARK
 local function MakeDarkToggle(name, default, callback)
     local btn = Instance.new("TextButton")
     btn.Parent = Content
@@ -465,7 +594,6 @@ local function MakeDarkToggle(name, default, callback)
     btnCorner.CornerRadius = UDim.new(0, 8)
     btnCorner.Parent = btn
     
-    -- RIPPLE EFFECT BUAT SEMUA BUTTON
     local function createRipple(e)
         local circle = Instance.new("Frame")
         circle.Parent = btn
@@ -502,7 +630,6 @@ local function MakeDarkToggle(name, default, callback)
         callback(state)
     end)
     
-    -- HOVER EFFECT
     btn.MouseEnter:Connect(function()
         if not state then
             btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -517,9 +644,7 @@ local function MakeDarkToggle(name, default, callback)
     return btn
 end
 
--- =============================================
 -- BIKIN SEMUA TOGGLE
--- =============================================
 MakeDarkToggle("🎯 Auto Aim", true, function(s)
     Settings.Aimbot = s
     FOVCircle.Visible = s
@@ -542,6 +667,10 @@ MakeDarkToggle("👁️ ESP Box", true, function(s)
     end
 end)
 
+MakeDarkToggle("👆 Double Tap Switch", true, function(s)
+    Settings.DoubleTapSwitch = s
+end)
+
 MakeDarkToggle("⚡ Speed 32", false, function(s)
     local char = LocalPlayer.Character
     if char then
@@ -562,9 +691,7 @@ MakeDarkToggle("🦘 Jump 150", false, function(s)
     end
 end)
 
--- =============================================
--- MINIMIZE ICON — NEON PULSE
--- =============================================
+-- MINIMIZE ICON
 local MinimizeIcon = Instance.new("TextButton")
 MinimizeIcon.Parent = ScreenGui
 MinimizeIcon.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
@@ -582,7 +709,6 @@ local IconCorner = Instance.new("UICorner")
 IconCorner.CornerRadius = UDim.new(1, 0)
 IconCorner.Parent = MinimizeIcon
 
--- PULSE ANIMATION UNTUK ICON
 local pulseTween
 local function pulseIcon()
     if pulseTween then pulseTween:Cancel() end
@@ -593,7 +719,6 @@ local function pulseIcon()
     pulseTween:Play()
 end
 
--- MINIMIZE LOGIC
 MinimizeBtn.MouseButton1Click:Connect(function()
     MainMenu.Visible = false
     MinimizeIcon.Visible = true
@@ -636,7 +761,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- DRAG MINIMIZE ICON
 local iconDragging, iconDragStart, iconStartPos = false
 
 MinimizeIcon.InputBegan:Connect(function(input)
@@ -660,7 +784,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- RESPAWN HANDLER
+-- RESPAWN
 LocalPlayer.CharacterAdded:Connect(function(char)
     CurrentTarget = nil
     StickyTarget = nil
@@ -671,16 +795,16 @@ end)
 task.spawn(function()
     task.wait(0.5)
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "🔥 GII CHEAT v14 DARK",
-        Text = "UI ULTIMATE EDITION! RIPPLE + NEON + PULSE!",
+        Title = "🔥 GII v15 TAP",
+        Text = "Double Tap buat ganti target!",
         Duration = 3
     })
 end)
 
 print("╔══════════════════════════════════════════╗")
-print("║ 🔥 GII v14 DARK — ULTIMATE EDITION    ║")
+print("║ 🔥 GII v15 — DOUBLE TAP SWITCH        ║")
 print("║ 🎯 STICKY AIM + AUTO SHOOT            ║")
-print("║ 📦 ESP BOX + HEALTH + DIST            ║")
-print("║ 🎨 DARK UI + RIPPLE + NEON + PULSE   ║")
-print("║ 😈 ECU ULTIMATE — KEREN ABIS!        ║")
+print("║ 👆 TAP 2X GANTI TARGET!               ║")
+print("║ 📦 ESP + DARK UI + RIPPLE             ║")
+print("║ 😈 ECU ULTIMATE                       ║")
 print("╚══════════════════════════════════════════╝")
