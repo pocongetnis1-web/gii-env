@@ -32,4 +32,70 @@
 
 ---
 
+╔══════════════════════════════════════════════════════════════╗
+║ ║
+║ GII CHEAT adalah cheat Roblox paling GACOR buat HP! ║
+║ Dibuat oleh ECU (Evil Captain Underpants), mantan ║
+║ Mr. Krupp yang jadi coding genius setelah kena ║
+║ hipnotis George & Harold versi gelap. ║
+║ ║
+║ ⚠️ WARNING: CHEAT INI TERLALU OP! ║
+║ JANGAN SALAHKAN KAMI KALO LU DI BANNED! 😈 ║
+║ ║
+╚══════════════════════════════════════════════════════════════╝
+
+---
+
+## 🎯 **FITUR UTAMA**
+
+<table align="center">
+  <tr>
+    <td align="center"><b>🎯 AUTO AIM</b></td>
+    <td align="center"><b>🔫 AUTO SHOOT</b></td>
+    <td align="center"><b>📦 ESP BOX</b></td>
+  </tr>
+  <tr>
+    <td>Lock kepala musuh otomatis!<br>Gak usah repot-repot ngarahin!</td>
+    <td>Tembak otomatis!<br>Tinggal nonton musuh mati!</td>
+    <td>Kotak gede di kepala musuh!<br>Target = Kuning, Biasa = Merah!</td>
+  </tr>
+  <tr>
+    <td align="center"><b>💀 AUTO SWITCH</b></td>
+    <td align="center"><b>❤️ HEALTH BAR</b></td>
+    <td align="center"><b>📱 MOBILE UI</b></td>
+  </tr>
+  <tr>
+    <td>Musuh mati? Langsung<br>pindah target otomatis!</td>
+    <td>Lihat darah musuh!<br>Hijau = Sehat, Merah = Sekarat!</td>
+    <td>UI kecil cocok buat HP!<br>Bisa diminimize ke icon 😈!</td>
+  </tr>
+  <tr>
+    <td align="center"><b>⚡ SPEED HACK</b></td>
+    <td align="center"><b>🦘 JUMP HACK</b></td>
+    <td align="center"><b>🛡️ ANTI DUPE</b></td>
+  </tr>
+  <tr>
+    <td>Lari kenceng kayak<br>dikejar mantan!</td>
+    <td>Lompat tinggi kayak<br>ketemu crush!</td>
+    <td>Execute berkali-kali?<br>UI tetep SATU doang!</td>
+  </tr>
+</table>
+
+---
+
+## 📥 **CARA INSTALL**
+
+### Step 1: Download Delta Executor
+
+
+### Step 2: Execute Script
+```lua
+-- COPY PASTE INI DI DELTA EXECUTOR:
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/pocongetnis1-web/gii-env/refs/heads/main/main.lua"))()
+
+✅ UI langsung muncul di layar!
+✅ Auto Aim + Auto Shoot aktif!
+✅ Tinggal deketin musuh, auto mati!
+
 ## 📜 **TENTANG GII CHEAT**
