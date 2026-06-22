@@ -1,14 +1,21 @@
 -- =============================================================
--- GII CHEAT v13.0 — FULL BUG FIX + UI GUARANTEED WORK! 😈🔥
--- AUTO AIM STICKY + AUTO SHOOT + ESP + UI PASTI MUNCUL
--- BY: ECU (Evil Captain Underpants) — SCAN TOTAL FIX
+-- 🔥 GII CHEAT v14.0 — DARK UI ULTIMATE EDITION 🔥
+-- AUTO AIM STICKY + AUTO SHOOT + ESP + DARK THEME BUTTONS
+-- BY: ECU (Evil Captain Underpants) — UI KEREN ABIS!
 -- =============================================================
 
--- ANTI DUPLICATE
-if getgenv().GII_LOADED then return end
+-- ANTI DUPLICATE HARDCORE
+if getgenv().GII_LOADED then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "⚠️ GII ALREADY LOADED",
+        Text = "Jangan execute dobel, bocil!",
+        Duration = 2
+    })
+    return
+end
 getgenv().GII_LOADED = true
 
--- CLEANUP OLD UI — PASTI BERSIH
+-- CLEANUP OLD UI — PASTI RESET TOTAL
 pcall(function()
     local old = game:GetService("CoreGui"):FindFirstChild("GII_FINAL")
     if old then old:Destroy() end
@@ -21,6 +28,8 @@ local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local VirtualUser = game:GetService("VirtualUser")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 
 -- SETTINGS
 local Settings = {
@@ -31,7 +40,10 @@ local Settings = {
     FOV = 350,
     AimPart = "Head",
     StickyAim = true,
-    TargetSwitchDelay = 0.2
+    TargetSwitchDelay = 0.2,
+    ShowFOV = true,
+    ShowHealth = true,
+    ShowDistance = true
 }
 
 local LastShot = 0
@@ -318,12 +330,13 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =============================================
--- UI SYSTEM — FIX TOTAL! PASTI MUNCUL!
+-- UI SYSTEM — DARK UI ULTIMATE EDITION
+-- PAKE SEMUA EFEK DARI KOLEKSI BUTTON
 -- =============================================
-task.wait(1) -- TUNGGU GAME FULLY LOADED
+task.wait(0.5)
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Parent = CoreGui
 ScreenGui.Name = "GII_FINAL"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -331,10 +344,10 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- MAIN FRAME
 local MainMenu = Instance.new("Frame")
 MainMenu.Parent = ScreenGui
-MainMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MainMenu.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 MainMenu.BorderSizePixel = 0
-MainMenu.Size = UDim2.new(0, 200, 0, 270)
-MainMenu.Position = UDim2.new(0.5, -100, 0.35, -135)
+MainMenu.Size = UDim2.new(0, 220, 0, 340)
+MainMenu.Position = UDim2.new(0.5, -110, 0.35, -170)
 MainMenu.Visible = true
 MainMenu.ClipsDescendants = true
 MainMenu.Active = true
@@ -342,25 +355,26 @@ MainMenu.Draggable = false
 
 -- CORNER
 local MenuCorner = Instance.new("UICorner")
-MenuCorner.CornerRadius = UDim.new(0, 10)
+MenuCorner.CornerRadius = UDim.new(0, 12)
 MenuCorner.Parent = MainMenu
 
--- STROKE
+-- STROKE — NEON OUTLINE
 local MenuStroke = Instance.new("UIStroke")
-MenuStroke.Color = Color3.fromRGB(255, 0, 100)
-MenuStroke.Thickness = 2
+MenuStroke.Color = Color3.fromRGB(57, 255, 136)
+MenuStroke.Thickness = 1.5
+MenuStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MenuStroke.Parent = MainMenu
 
--- HEADER
+-- HEADER — DARK GLOW
 local Header = Instance.new("Frame")
 Header.Parent = MainMenu
-Header.BackgroundColor3 = Color3.fromRGB(255, 0, 80)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 Header.BorderSizePixel = 0
-Header.Size = UDim2.new(1, 0, 0, 34)
+Header.Size = UDim2.new(1, 0, 0, 40)
 Header.Active = true
 
 local HeaderCorner = Instance.new("UICorner")
-HeaderCorner.CornerRadius = UDim.new(0, 10)
+HeaderCorner.CornerRadius = UDim.new(0, 12)
 HeaderCorner.Parent = Header
 
 -- TITLE
@@ -369,41 +383,43 @@ Title.Parent = Header
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1, -70, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Text = "🔥 GII v13 FIX"
+Title.Text = "🔥 GII v14 DARK"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
 Title.Font = Enum.Font.GothamBlack
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- MINIMIZE BUTTON
+-- BUTTON MINIMIZE — RIPPLE EFFECT + NEON
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = Header
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
-MinimizeBtn.Size = UDim2.new(0, 24, 0, 24)
-MinimizeBtn.Position = UDim2.new(1, -54, 0, 5)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MinimizeBtn.Size = UDim2.new(0, 26, 0, 26)
+MinimizeBtn.Position = UDim2.new(1, -56, 0, 7)
 MinimizeBtn.Text = "─"
 MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBtn.TextScaled = true
 MinimizeBtn.Font = Enum.Font.GothamBold
 MinimizeBtn.AutoButtonColor = false
-MinimizeBtn.BorderSizePixel = 0
+MinimizeBtn.BorderSizePixel = 1
+MinimizeBtn.BorderColor3 = Color3.fromRGB(57, 255, 136)
 
 local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(1, 0)
 MinCorner.Parent = MinimizeBtn
 
--- CLOSE BUTTON
+-- BUTTON CLOSE — RIPPLE EFFECT + RED NEON
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = Header
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 60)
-CloseBtn.Size = UDim2.new(0, 24, 0, 24)
-CloseBtn.Position = UDim2.new(1, -26, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -28, 0, 7)
 CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
 CloseBtn.TextScaled = true
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.AutoButtonColor = false
-CloseBtn.BorderSizePixel = 0
+CloseBtn.BorderSizePixel = 1
+CloseBtn.BorderColor3 = Color3.fromRGB(255, 80, 80)
 
 local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(1, 0)
@@ -413,11 +429,11 @@ CloseCorner.Parent = CloseBtn
 local Content = Instance.new("ScrollingFrame")
 Content.Parent = MainMenu
 Content.BackgroundTransparency = 1
-Content.Size = UDim2.new(1, -4, 1, -40)
-Content.Position = UDim2.new(0, 2, 0, 40)
-Content.CanvasSize = UDim2.new(0, 0, 0, 250)
-Content.ScrollBarThickness = 2
-Content.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 100)
+Content.Size = UDim2.new(1, -8, 1, -48)
+Content.Position = UDim2.new(0, 4, 0, 46)
+Content.CanvasSize = UDim2.new(0, 0, 0, 280)
+Content.ScrollBarThickness = 3
+Content.ScrollBarImageColor3 = Color3.fromRGB(57, 255, 136)
 Content.ScrollingDirection = Enum.ScrollingDirection.Y
 Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Content.BorderSizePixel = 0
@@ -425,61 +441,108 @@ Content.BorderSizePixel = 0
 local ListLayout = Instance.new("UIListLayout")
 ListLayout.Parent = Content
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ListLayout.Padding = UDim.new(0, 4)
+ListLayout.Padding = UDim.new(0, 6)
 
--- TOGGLE MAKER
-local function MakeToggle(name, default, callback)
+-- =============================================
+-- FUNGSI BIKIN BUTTON DARK THEME
+-- =============================================
+local function MakeDarkToggle(name, default, callback)
     local btn = Instance.new("TextButton")
     btn.Parent = Content
-    btn.BackgroundColor3 = default and Color3.fromRGB(0, 180, 80) or Color3.fromRGB(45, 45, 65)
-    btn.BorderSizePixel = 0
-    btn.Size = UDim2.new(1, -6, 0, 32)
-    btn.Text = " " .. name .. (default and " ✅" or " ❌")
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundColor3 = default and Color3.fromRGB(22, 51, 31) or Color3.fromRGB(20, 20, 25)
+    btn.BorderSizePixel = 1
+    btn.BorderColor3 = default and Color3.fromRGB(57, 255, 136) or Color3.fromRGB(40, 40, 50)
+    btn.Size = UDim2.new(1, -6, 0, 36)
+    btn.Text = "  " .. name .. (default and " ✅" or " ❌")
+    btn.TextColor3 = default and Color3.fromRGB(57, 255, 136) or Color3.fromRGB(150, 150, 150)
     btn.Font = Enum.Font.GothamBold
     btn.TextScaled = true
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.AutoButtonColor = false
+    btn.ClipsDescendants = true
     
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.CornerRadius = UDim.new(0, 8)
     btnCorner.Parent = btn
     
+    -- RIPPLE EFFECT BUAT SEMUA BUTTON
+    local function createRipple(e)
+        local circle = Instance.new("Frame")
+        circle.Parent = btn
+        circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        circle.BackgroundTransparency = 0.6
+        circle.BorderSizePixel = 0
+        local size = math.max(btn.AbsoluteSize.X, btn.AbsoluteSize.Y) * 0.8
+        circle.Size = UDim2.new(0, size, 0, size)
+        circle.Position = UDim2.new(0, e.X - size/2, 0, e.Y - size/2)
+        circle.ClipsDescendants = true
+        
+        local circleCorner = Instance.new("UICorner")
+        circleCorner.CornerRadius = UDim.new(1, 0)
+        circleCorner.Parent = circle
+        
+        local tween = TweenService:Create(circle, 
+            TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+            {BackgroundTransparency = 1, Size = UDim2.new(0, size*2, 0, size*2), Position = UDim2.new(0, e.X - size, 0, e.Y - size)}
+        )
+        tween:Play()
+        task.delay(0.5, function() pcall(function() circle:Destroy() end) end)
+    end
+    
     local state = default
-    btn.MouseButton1Click:Connect(function()
+    btn.MouseButton1Click:Connect(function(input)
+        local pos = input and input.Position or Vector2.new(btn.AbsoluteSize.X/2, btn.AbsoluteSize.Y/2)
+        createRipple(pos)
+        
         state = not state
-        btn.BackgroundColor3 = state and Color3.fromRGB(0, 180, 80) or Color3.fromRGB(45, 45, 65)
-        btn.Text = " " .. name .. (state and " ✅" or " ❌")
+        btn.BackgroundColor3 = state and Color3.fromRGB(22, 51, 31) or Color3.fromRGB(20, 20, 25)
+        btn.BorderColor3 = state and Color3.fromRGB(57, 255, 136) or Color3.fromRGB(40, 40, 50)
+        btn.Text = "  " .. name .. (state and " ✅" or " ❌")
+        btn.TextColor3 = state and Color3.fromRGB(57, 255, 136) or Color3.fromRGB(150, 150, 150)
         callback(state)
+    end)
+    
+    -- HOVER EFFECT
+    btn.MouseEnter:Connect(function()
+        if not state then
+            btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+        end
+    end)
+    btn.MouseLeave:Connect(function()
+        if not state then
+            btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+        end
     end)
     
     return btn
 end
 
--- TOMBOL-TOMBOL
-MakeToggle("🎯 Auto Aim", true, function(s)
+-- =============================================
+-- BIKIN SEMUA TOGGLE
+-- =============================================
+MakeDarkToggle("🎯 Auto Aim", true, function(s)
     Settings.Aimbot = s
     FOVCircle.Visible = s
     CurrentTarget = nil
     StickyTarget = nil
 end)
 
-MakeToggle("📌 Sticky Aim", true, function(s)
+MakeDarkToggle("📌 Sticky Aim", true, function(s)
     Settings.StickyAim = s
 end)
 
-MakeToggle("🔫 Auto Shoot", true, function(s)
+MakeDarkToggle("🔫 Auto Shoot", true, function(s)
     Settings.AutoShoot = s
 end)
 
-MakeToggle("👁️ ESP Box", true, function(s)
+MakeDarkToggle("👁️ ESP Box", true, function(s)
     Settings.ESP = s
     if not s then
         for p in pairs(ESPStorage) do RemoveESP(p) end
     end
 end)
 
-MakeToggle("⚡ Speed 32", false, function(s)
+MakeDarkToggle("⚡ Speed 32", false, function(s)
     local char = LocalPlayer.Character
     if char then
         local hum = char:FindFirstChildOfClass("Humanoid")
@@ -489,7 +552,7 @@ MakeToggle("⚡ Speed 32", false, function(s)
     end
 end)
 
-MakeToggle("🦘 Jump 150", false, function(s)
+MakeDarkToggle("🦘 Jump 150", false, function(s)
     local char = LocalPlayer.Character
     if char then
         local hum = char:FindFirstChildOfClass("Humanoid")
@@ -499,43 +562,54 @@ MakeToggle("🦘 Jump 150", false, function(s)
     end
 end)
 
--- MINIMIZE ICON
+-- =============================================
+-- MINIMIZE ICON — NEON PULSE
+-- =============================================
 local MinimizeIcon = Instance.new("TextButton")
 MinimizeIcon.Parent = ScreenGui
-MinimizeIcon.BackgroundColor3 = Color3.fromRGB(255, 0, 80)
-MinimizeIcon.Size = UDim2.new(0, 42, 0, 42)
-MinimizeIcon.Position = UDim2.new(0.85, 0, 0.5, -21)
+MinimizeIcon.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MinimizeIcon.Size = UDim2.new(0, 48, 0, 48)
+MinimizeIcon.Position = UDim2.new(0.85, 0, 0.5, -24)
 MinimizeIcon.Text = "😈"
 MinimizeIcon.TextScaled = true
 MinimizeIcon.Font = Enum.Font.GothamBlack
 MinimizeIcon.Visible = false
 MinimizeIcon.AutoButtonColor = false
-MinimizeIcon.BorderSizePixel = 0
-MinimizeIcon.Active = true
+MinimizeIcon.BorderSizePixel = 1
+MinimizeIcon.BorderColor3 = Color3.fromRGB(57, 255, 136)
 
 local IconCorner = Instance.new("UICorner")
 IconCorner.CornerRadius = UDim.new(1, 0)
 IconCorner.Parent = MinimizeIcon
 
-local IconStroke = Instance.new("UIStroke")
-IconStroke.Color = Color3.fromRGB(255, 255, 255)
-IconStroke.Thickness = 2
-IconStroke.Parent = MinimizeIcon
+-- PULSE ANIMATION UNTUK ICON
+local pulseTween
+local function pulseIcon()
+    if pulseTween then pulseTween:Cancel() end
+    pulseTween = TweenService:Create(MinimizeIcon, 
+        TweenInfo.new(0.8, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, true),
+        {BorderColor3 = Color3.fromRGB(255, 255, 255)}
+    )
+    pulseTween:Play()
+end
 
 -- MINIMIZE LOGIC
 MinimizeBtn.MouseButton1Click:Connect(function()
     MainMenu.Visible = false
     MinimizeIcon.Visible = true
+    pulseIcon()
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
     MainMenu.Visible = false
     MinimizeIcon.Visible = true
+    pulseIcon()
 end)
 
 MinimizeIcon.MouseButton1Click:Connect(function()
     MainMenu.Visible = true
     MinimizeIcon.Visible = false
+    if pulseTween then pulseTween:Cancel() end
 end)
 
 -- DRAG UI
@@ -597,16 +671,16 @@ end)
 task.spawn(function()
     task.wait(0.5)
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "🔥 GII CHEAT v13",
-        Text = "LOADED! Auto Aim + Sticky + Shoot!",
+        Title = "🔥 GII CHEAT v14 DARK",
+        Text = "UI ULTIMATE EDITION! RIPPLE + NEON + PULSE!",
         Duration = 3
     })
 end)
 
-print("╔══════════════════════════════════╗")
-print("║ 🔥 GII v13 FIX — LOADED!       ║")
-print("║ 🎯 STICKY AIM + AUTO SHOOT    ║")
-print("║ 📦 ESP BOX + HEALTH + DIST    ║")
-print("║ 📱 UI PASTI MUNCUL!           ║")
-print("║ 😈 ECU ULTIMATE               ║")
-print("╚══════════════════════════════════╝")
+print("╔══════════════════════════════════════════╗")
+print("║ 🔥 GII v14 DARK — ULTIMATE EDITION    ║")
+print("║ 🎯 STICKY AIM + AUTO SHOOT            ║")
+print("║ 📦 ESP BOX + HEALTH + DIST            ║")
+print("║ 🎨 DARK UI + RIPPLE + NEON + PULSE   ║")
+print("║ 😈 ECU ULTIMATE — KEREN ABIS!        ║")
+print("╚══════════════════════════════════════════╝")
